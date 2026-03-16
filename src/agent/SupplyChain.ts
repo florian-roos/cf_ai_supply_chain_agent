@@ -53,7 +53,7 @@ export class SupplyChain extends AIChatAgent<Env> {
 
     getWarehouses(city: string): Warehouse[] {
         const rows = this.ctx.storage.sql.exec<any>(
-            `SELECT city, status, reason, inventory_level as inventoryLevel FROM warehouses`,
+            `SELECT city as location, status, reason, inventory_level as inventoryLevel FROM warehouses`,
         );
 
         return rows.toArray().map((row) => ({
@@ -98,7 +98,7 @@ export class SupplyChain extends AIChatAgent<Env> {
             .exec<any>(
                 `UPDATE warehouses
                 SET inventory_level = inventory_level + ?
-                WHERE city = ? AND inventory + ? >= 0
+                WHERE city = ? AND inventory_level + ? >= 0
                 RETURNING status, reason, inventory_level as inventoryLevel`,
                 delta,
                 city,
