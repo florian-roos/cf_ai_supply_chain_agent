@@ -1,4 +1,4 @@
-import { DurableObject } from "cloudflare:workers";
+import { AIChatAgent } from "@cloudflare/ai-chat";
 import type {
     Warehouse,
     WarehouseState,
@@ -6,26 +6,23 @@ import type {
 } from "../types/graph";
 import { WORLD_MAP } from "../config/topology";
 
-export class SupplyChain extends DurableObject<Env> {
-    private sql: SqlStorage;
-
+export class SupplyChain extends AIChatAgent<Env> {
     constructor(ctx: DurableObjectState, env: Env) {
         super(ctx, env);
-        this.sql = ctx.storage.sql;
 
         ctx.blockConcurrencyWhile(async () => {
-            this.sql.exec(
+            this.ctx.storage.sql.exec(
                 `CREATE TABLE IF NOT EXISTS warehouses (
                     city TEXT PRIMARY KEY,
                     status TEXT NOT NULL,
-                    reason TEXT 
+                    reason TEXT, 
                     inventory_level INTEGER NOT NULL
                 );`,
             );
 
             for (const cityName of Object.keys(WORLD_MAP)) {
-                this.sql.exec(
-                    `INSERT OR IGNORE INTO warehouses (city, status, reason, inventory_level) VALUES (?, ?, ?)`,
+                this.ctx.storage.sql.exec(
+                    `INSERT OR IGNORE INTO warehouses (city, status, reason, inventory_level) VALUES (?, ?, ?, ?)`,
                     cityName,
                     "operational",
                     null,
@@ -35,8 +32,8 @@ export class SupplyChain extends DurableObject<Env> {
         });
     }
 
-    async getWarehouseState(city: string): Promise<WarehouseState> {
-        const row = await this.sql
+    getWarehouseState(city: string): WarehouseState {
+        const row = this.ctx.storage.sql
             .exec<any>(
                 `SELECT status, reason, inventory_level as inventoryLevel FROM warehouses WHERE city = ?`,
                 city,
@@ -54,8 +51,8 @@ export class SupplyChain extends DurableObject<Env> {
         };
     }
 
-    async getWarehouses(city: string): Promise<Warehouse[]> {
-        const rows = await this.sql.exec<any>(
+    getWarehouses(city: string): Warehouse[] {
+        const rows = this.ctx.storage.sql.exec<any>(
             `SELECT city, status, reason, inventory_level as inventoryLevel FROM warehouses`,
         );
 
@@ -69,20 +66,26 @@ export class SupplyChain extends DurableObject<Env> {
         }));
     }
 
-    async setWarehouseStatus(
-        city: string,
-        status: WarehouseStatus,
-    ): Promise<void> {
-        this.sql.exec(
-            `UPDATE warehouses SET status = '?' WHERE city = ?`,
+    getOfflineNodes(): string[] {
+        const rows = this.ctx.storage.sql
+            .exec<{
+                city: string;
+            }>(`SELECT city FROM warehouses WHERE status = 'disturbed'`)
+            .toArray();
+        return rows.map((r) => r.city);
+    }
+
+    setWarehouseStatus(city: string, status: WarehouseStatus): void {
+        this.ctx.storage.sql.exec(
+            `UPDATE warehouses SET status = ? WHERE city = ?`,
             status,
             city,
         );
 
-        const exists = this.sql
+        const exists = this.ctx.storage.sql
             .exec<{
                 city: string;
-            }>(`SELECT city FROM nodes WHERE city = ?`, city)
+            }>(`SELECT city FROM warehouses WHERE city = ?`, city)
             .one();
 
         if (!exists) {
@@ -90,11 +93,8 @@ export class SupplyChain extends DurableObject<Env> {
         }
     }
 
-    async updateInventory(
-        city: string,
-        delta: number,
-    ): Promise<WarehouseState> {
-        const updated = this.sql
+    updateInventory(city: string, delta: number): WarehouseState {
+        const updated = this.ctx.storage.sql
             .exec<any>(
                 `UPDATE warehouses
                 SET inventory_level = inventory_level + ?
