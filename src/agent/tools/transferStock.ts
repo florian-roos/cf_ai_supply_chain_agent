@@ -1,13 +1,11 @@
 import { tool } from "ai";
 import { z } from "zod";
 import type { SupplyChain } from "../SupplyChain";
-import { calculateOptimalRoute } from "../../algorithms/calculateOptimalRoute";
-import { WORLD_MAP } from "../../config/topology";
 
 export function transferStockTool(agent: SupplyChain) {
     return tool({
         description:
-            "Transfer stock units from a source warehouse to a destination warehouse. The system will calculate the optimal route, deduct inventory immediately, and schedule the arrival after the transit time.",
+            "Transfer stock units from a source warehouse to a destination warehouse. The system will deduct inventory immediately, and schedule the arrival after the transit time. You must provide the fully calculated route result given to you by planTransferRoute.",
         inputSchema: z.object({
             source: z
                 .string()
@@ -20,21 +18,26 @@ export function transferStockTool(agent: SupplyChain) {
                 .int()
                 .positive()
                 .describe("Number of stock units to transfer"),
+            route: z
+                .object({
+                    path: z
+                        .array(z.string())
+                        .describe("The planned route path"),
+                    transitTime: z
+                        .number()
+                        .describe("The transit time in hours"),
+                    exists: z.boolean().describe("Whether a route exists"),
+                })
+                .describe(
+                    "The OptimalRouteResult object returned from planTransferRoute",
+                ),
         }),
         needsApproval: true,
-        execute: async ({ source, destination, amount }) => {
+        execute: async ({ source, destination, amount, route }) => {
             const sourceState = agent.getWarehouseState(source);
             if (sourceState.inventoryLevel < amount) {
                 return `Insufficient inventory at ${source}: ${sourceState.inventoryLevel} units available, ${amount} requested.`;
             }
-
-            const disruptedNodes = agent.getDisruptedWarehouses();
-            const route = calculateOptimalRoute(
-                WORLD_MAP,
-                source,
-                destination,
-                disruptedNodes,
-            );
 
             if (!route.exists) {
                 return `No available route from ${source} to ${destination}. All paths are blocked by disrupted warehouses.`;

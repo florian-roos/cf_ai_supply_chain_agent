@@ -12,6 +12,7 @@ import type {
 import { WORLD_MAP } from "../config/topology";
 import { getWarehouseStateTool } from "./tools/getWarehouseState";
 import { transferStockTool } from "./tools/transferStock";
+import { planTransferRouteTool } from "./tools/planTransferRoute";
 import { updateWarehouseStatusTool } from "./tools/updateWarehouseStatus";
 
 export class SupplyChain extends AIChatAgent<Env> {
@@ -45,8 +46,11 @@ export class SupplyChain extends AIChatAgent<Env> {
 
         const result = streamText({
             model: workersai("@cf/zai-org/glm-4.7-flash"),
-            system: `You are a helpful supply chain assistant to manage a global supply chain. You can get the state of a warehouse, update the state of a warehouse (whenever the user want to declare a warehouse disturbed or make it operational again), transfer stock from one warehouse to another one and schedule tasks.
-
+            system: `You are a helpful supply chain assistant to manage a global supply chain. 
+            You can get the state of a warehouse, update the state of a warehouse, transfer stock from one warehouse to another one and schedule tasks.
+            IMPORTANT: When a user requests a stock transfer, you must first use the planTransferRoute tool to calculate the route. 
+            then, use the transferStock tool and pass the full OptimalRouteResult object to it to execute the transfer. Explain the journey and time (converted to days or hours) to the user.
+            
 ${getSchedulePrompt({ date: new Date() })}
 
 If the user asks to schedule a task, use the schedule tool to schedule the task.`,
@@ -54,6 +58,7 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
             tools: {
                 // Server-side supply chain tools
                 getWarehouseState: getWarehouseStateTool(this),
+                planTransferRoute: planTransferRouteTool(this),
                 transferStock: transferStockTool(this),
                 updateWarehouseStatus: updateWarehouseStatusTool(this),
 
