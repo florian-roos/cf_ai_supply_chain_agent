@@ -177,10 +177,15 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
         return rows.map((r) => r.city);
     }
 
-    setWarehouseStatus(city: string, status: WarehouseStatus): void {
+    setWarehouseStatus(
+        city: string,
+        status: WarehouseStatus,
+        reason?: string,
+    ): void {
         this.ctx.storage.sql.exec(
-            `UPDATE warehouses SET status = ? WHERE city = ?`,
+            `UPDATE warehouses SET status = ?, reason = ? WHERE city = ?`,
             status,
+            reason,
             city,
         );
 
