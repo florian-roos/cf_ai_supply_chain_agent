@@ -134,6 +134,26 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
         );
     }
 
+    async completeTransfer(
+        payload: { destination: string; amount: number },
+        _task: Schedule<{ destination: string; amount: number }>,
+    ) {
+        const updatedState = this.updateInventory(
+            payload.destination,
+            payload.amount,
+        );
+
+        this.broadcast(
+            JSON.stringify({
+                type: "stock-arrival",
+                destination: payload.destination,
+                amount: payload.amount,
+                inventoryLevel: updatedState.inventoryLevel,
+                timestamp: new Date().toISOString(),
+            }),
+        );
+    }
+
     getWarehouseState(city: string): WarehouseState {
         const row = this.ctx.storage.sql
             .exec<any>(
