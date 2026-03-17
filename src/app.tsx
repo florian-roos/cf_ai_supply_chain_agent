@@ -28,8 +28,6 @@ import {
     BrainIcon,
     CaretDownIcon,
     BugIcon,
-    PlugsConnectedIcon,
-    XIcon,
 } from "@phosphor-icons/react";
 
 // ── Small components ──────────────────────────────────────────────────
