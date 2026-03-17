@@ -4,38 +4,38 @@ import type { GraphTopology } from "../types/graph";
 export const WORLD_MAP: GraphTopology = {
   "San Francisco": {
     "New York": 96,
-    "Singapore": 300,
-    "Sydney": 360
+    Singapore: 300,
+    Sydney: 360
   },
   "New York": {
     "San Francisco": 96,
-    "Lisbon": 168,
-    "London": 180
+    Lisbon: 168,
+    London: 180
   },
-  "Lisbon": {
+  Lisbon: {
     "New York": 168,
-    "London": 36,
-    "Paris": 30
+    London: 36,
+    Paris: 30
   },
-  "London": {
+  London: {
     "New York": 180,
-    "Lisbon": 36,
-    "Paris": 12,
-    "Singapore": 312
+    Lisbon: 36,
+    Paris: 12,
+    Singapore: 312
   },
-  "Paris": {
-    "Lisbon": 30,
-    "London": 12,
-    "Singapore": 288
+  Paris: {
+    Lisbon: 30,
+    London: 12,
+    Singapore: 288
   },
-  "Singapore": {
+  Singapore: {
     "San Francisco": 300,
-    "London": 312,
-    "Paris": 288,
-    "Sydney": 192
+    London: 312,
+    Paris: 288,
+    Sydney: 192
   },
-  "Sydney": {
+  Sydney: {
     "San Francisco": 360,
-    "Singapore": 192
+    Singapore: 192
   }
 };
