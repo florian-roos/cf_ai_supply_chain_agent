@@ -168,11 +168,11 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
         }));
     }
 
-    getOfflineNodes(): string[] {
+    getDisruptedWarehouses(): string[] {
         const rows = this.ctx.storage.sql
             .exec<{
                 city: string;
-            }>(`SELECT city FROM warehouses WHERE status = 'disturbed'`)
+            }>(`SELECT city FROM warehouses WHERE status = 'disrupted'`)
             .toArray();
         return rows.map((r) => r.city);
     }
