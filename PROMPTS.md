@@ -19,3 +19,5 @@ Modify the app.tsx file to transform the design of the agent into a professional
 Center the title and the set of warehouses
 
 I want the border style of the Global Warehouse Network container to be the same as the one around the conversational window. For now it is darker or with a strange shadow
+
+The tools inputs and outputs currently render as ugly JSON blocks. Update the ToolPartView component to render beautiful custom UI instead of JSON for my custom tools. For the planTransferRoute tool output, show the route path with arrows and convert the transitTime from hours to days. For the transferStock tool approval request, create a formatted box showing the amount, source, destination, the route, and the estimated time in days. For the updateWarehouseStatus tool approval request, create a box displaying the city, the new status colored red or green, and the reason. Leave any other tools rendering as JSON.

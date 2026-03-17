@@ -94,10 +94,26 @@ function ToolPartView({
             </Text>
             <Badge variant="secondary">Done</Badge>
           </div>
-          <div className="font-mono">
-            <Text size="xs" variant="secondary">
-              {JSON.stringify(part.output, null, 2)}
-            </Text>
+          <div className="font-mono mt-2">
+            {toolName === "planTransferRoute" ? (
+              (() => {
+                const out = part.output as {
+                  path?: string[];
+                  transitTime: number;
+                };
+                return (
+                  <div className="text-xs text-kumo-text-secondary border-l-2 border-kumo-line pl-2">
+                    <strong>Route Found:</strong> {out.path?.join(" → ")} <br />
+                    <strong>Transit Time:</strong>{" "}
+                    {Math.round(out.transitTime / 24)} days
+                  </div>
+                );
+              })()
+            ) : (
+              <Text size="xs" variant="secondary">
+                {JSON.stringify(part.output, null, 2)}
+              </Text>
+            )}
           </div>
         </Surface>
       </div>
@@ -117,9 +133,73 @@ function ToolPartView({
             </Text>
           </div>
           <div className="font-mono mb-3">
-            <Text size="xs" variant="secondary">
-              {JSON.stringify(part.input, null, 2)}
-            </Text>
+            {toolName === "transferStock" ? (
+              (() => {
+                const inp = part.input as {
+                  amount: number;
+                  source: string;
+                  destination: string;
+                  route: {
+                    path: string[];
+                    transitTime: number;
+                  };
+                };
+                return (
+                  <div className="bg-kumo/5 p-2 rounded-md border border-kumo/10">
+                    <div className="text-sm font-medium mb-1">
+                      Transfer {inp.amount} units from {inp.source} to{" "}
+                      {inp.destination}
+                    </div>
+                    <div className="text-xs text-kumo-text-secondary">
+                      <strong>Via:</strong> {inp.route?.path?.join(" → ")}
+                    </div>
+                    <div className="text-xs text-kumo-text-secondary mt-0.5">
+                      <strong>Estimated Time:</strong>{" "}
+                      {Math.round(inp.route?.transitTime / 24)} days
+                    </div>
+                  </div>
+                );
+              })()
+            ) : toolName === "updateWarehouseStatus" ? (
+              (() => {
+                const inp = part.input as {
+                  city: string;
+                  status: string;
+                  reason?: string;
+                };
+                return (
+                  <div className="bg-kumo/5 p-2 rounded-md border border-kumo/10">
+                    <div className="text-sm font-medium mb-1">
+                      Update Warehouse Status
+                    </div>
+                    <div className="text-xs text-kumo-text-secondary">
+                      <strong>City:</strong> {inp.city}
+                    </div>
+                    <div className="text-xs text-kumo-text-secondary mt-0.5">
+                      <strong>New Status:</strong>{" "}
+                      <span
+                        className={
+                          inp.status === "disrupted"
+                            ? "text-kumo-danger font-medium"
+                            : "text-kumo-success font-medium"
+                        }
+                      >
+                        {inp.status}
+                      </span>
+                    </div>
+                    {inp.reason && (
+                      <div className="text-xs text-kumo-text-secondary mt-0.5">
+                        <strong>Reason:</strong> {inp.reason}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
+            ) : (
+              <Text size="xs" variant="secondary">
+                {JSON.stringify(part.input, null, 2)}
+              </Text>
+            )}
           </div>
           <div className="flex gap-2">
             <Button
