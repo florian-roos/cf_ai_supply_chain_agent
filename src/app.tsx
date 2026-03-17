@@ -30,6 +30,16 @@ import {
     BugIcon,
 } from "@phosphor-icons/react";
 
+const WAREHOUSE_CITIES = [
+    "San Fransisco",
+    "New York",
+    "Lisbon",
+    "London",
+    "Paris",
+    "Singapore",
+    "Sydney",
+] as const;
+
 // ── Small components ──────────────────────────────────────────────────
 
 function ThemeToggle() {
@@ -281,11 +291,11 @@ function Chat() {
     return (
         <div className="flex flex-col h-screen bg-kumo-elevated">
             {/* Header */}
-            <header className="px-5 py-4 bg-kumo-base border-b border-kumo-line">
+            <header className="px-5 py-4 bg-kumo-base/95 border-b border-kumo-line backdrop-blur">
                 <div className="max-w-3xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <h1 className="text-lg font-semibold text-kumo-default">
-                            <span className="mr-2">⛅</span>Agent Starter
+                            <span className="mr-2"></span>Supply Chain Control
                         </h1>
                         <Badge variant="secondary">
                             <ChatCircleDotsIcon
@@ -293,7 +303,7 @@ function Chat() {
                                 weight="bold"
                                 className="mr-1"
                             />
-                            AI Chat
+                            Operations Assistant
                         </Badge>
                     </div>
                     <div className="flex items-center gap-3">
@@ -332,6 +342,28 @@ function Chat() {
                 </div>
             </header>
 
+            <section className="px-5 pt-4">
+                <div className="max-w-3xl mx-auto grid grid-cols-1 gap-3">
+                    <Surface className="rounded-2xl ring ring-kumo-line bg-kumo-base px-4 py-4">
+                        <div className="flex items-center justify-center gap-2 mb-3 text-center">
+                            <Text size="sm" bold>
+                                Global Warehouse Network
+                            </Text>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            {WAREHOUSE_CITIES.map((city) => (
+                                <span
+                                    key={city}
+                                    className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#e8f3fb] text-[#114a73] border border-[#c8e2f5]"
+                                >
+                                    {city}
+                                </span>
+                            ))}
+                        </div>
+                    </Surface>
+                </div>
+            </section>
+
             {/* Messages */}
             <div className="flex-1 overflow-y-auto">
                 <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
@@ -342,10 +374,9 @@ function Chat() {
                             contents={
                                 <div className="flex flex-wrap justify-center gap-2">
                                     {[
-                                        "What's the weather in Paris?",
-                                        "What timezone am I in?",
-                                        "Calculate 5000 * 3",
-                                        "Remind me in 5 minutes to take a break",
+                                        "What is the status and the stock level of the Singapore warehouse?",
+                                        "There is a strike in Paris, update the warehouse status accordingly",
+                                        "Send 11 units from San Francisco to Lisbon",
                                     ].map((prompt) => (
                                         <Button
                                             key={prompt}
@@ -426,10 +457,10 @@ function Chat() {
                                                     className="max-w-[85%] w-full"
                                                     open={!isDone}
                                                 >
-                                                    <summary className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-sm select-none">
+                                                    <summary className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg bg-[#e8f3fb] border border-[#c8e2f5] text-sm select-none">
                                                         <BrainIcon
                                                             size={14}
-                                                            className="text-purple-400"
+                                                            className="text-[#1f6d9e]"
                                                         />
                                                         <span className="font-medium text-kumo-default">
                                                             Reasoning
@@ -439,7 +470,7 @@ function Chat() {
                                                                 Complete
                                                             </span>
                                                         ) : (
-                                                            <span className="text-xs text-kumo-brand">
+                                                            <span className="text-xs text-[#1f6d9e]">
                                                                 Thinking...
                                                             </span>
                                                         )}
