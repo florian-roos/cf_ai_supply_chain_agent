@@ -1,235 +1,78 @@
-# Agent Starter
+# cf_ai_supply_chain: AI-Powered Supply Chain Simulator
 
-![npm i agents command](./npm-agents-banner.svg)
+**Live Demo:** [https://cf-ai-supply-chain.florian-roos19.workers.dev/](https://cf-ai-supply-chain.florian-roos19.workers.dev/)
 
-<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/agents-starter"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"/></a>
+## Overview
 
-A starter template for building AI chat agents on Cloudflare, powered by the [Agents SDK](https://developers.cloudflare.com/agents/).
+This project is a real-time, AI-orchestrated supply chain simulator built entirely on Cloudflare's edge infrastructure using the Agents SDK. This agent actively interacts with a simulated global network of warehouses. You can ask it about the current state of the supply chain, simulate natural disasters to knock warehouses disrupted, and route stock around the world.
 
-Uses Workers AI (no API key required), with tools for weather, timezone detection, calculations with approval, and task scheduling.
+The project uses LLMs for intent parsing, deterministic algorithms for pathfinding, and Durable Objects for state management.
 
-## Quick start
+## Architecture
+
+The architecture is splited into four core pieces:
+
+### 1. State Management (Durable Objects & SQLite)
+
+The entire supply chain state lives in a single Cloudflare Durable Object. I used its embedded SQLite database to keep track of a static graph of 7 global hubs (like New York, London, Singapore, etc.). Each node tracks its current inventory and its operational status (whether it's `operational` or `disrupted`). Using a Durable Object ensures that stock updates are strictly consistent.
+
+### 2. AI & Human-in-the-Loop (Workers AI)
+
+The agent uses a LLM as the brain of the operation. It turns unstructured chat into schema-validated JSON tool calls. The system enforces a "Human-in-the-Loop" behavior for critical operations on the supply chain.
+For example when asking the AI to mark a warehouse as disrupted or to transfer stock, the AI prepares the plan but pause execution and ask the user to click "Approve" before any database changes actually happen.
+
+### 3. Pathfinding Algorithm (Dijkstra)
+
+When you ask to transfer stock, the AI first calls a `planTransferRoute` tool. This runs a deterministic Dijkstra shortest-path algorithm across our network graph, avoiding any node that is currently marked as `disrupted`. It then returns the optimal path and exact transit time back to the AI to present to you.
+
+### 4. Transit Simulation (Cloudflare Scheduled Tasks)
+
+Once you approve a stock transfer, the Durable Object acts on it in two steps to simulate real-world transit:
+
+1. It immediately deducts the inventory from the source warehouse.
+2. It dynamically registers a Cloudflare Scheduled Task with a delay equal to the calculated transit schedule.
+   Once the delay is up, the alarm wakes the Durable Object, which then deposits the inventory at the destination and broadcasts a WebSocket event to update the React client in real time.
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18+)
+- npm
+- Wrangler CLI (logged into your Cloudflare account)
+
+### Running Locally
+
+To test this out on your local machine, run the following commands:
 
 ```bash
-npx create-cloudflare@latest --template cloudflare/agents-starter
-cd agents-starter
 npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) to see your agent in action.
+### Try it out
 
-Try these prompts to see the different features:
+Once you are on the deployed link (or localhost), try some of these prompts:
 
-- **"What's the weather in Paris?"** — server-side tool (runs automatically)
-- **"What timezone am I in?"** — client-side tool (browser provides the answer)
-- **"Calculate 5000 \* 3"** — approval tool (asks you before running)
-- **"Remind me in 5 minutes to take a break"** — scheduling
+- **Check state:** "What is the status of the Singapore warehouse?"
+- **Simulate a disaster:** "Simulate a natural disaster in Paris."
+- **Transfer stock:** "Route 15 units of stock from New York to Sydney."
 
-## Project structure
+## Project Structure
 
-```
+```text
 src/
-  server.ts    # Chat agent with tools and scheduling
-  app.tsx      # Chat UI built with Kumo components
-  client.tsx   # React entry point
-  styles.css   # Tailwind + Kumo styles
+  agent/
+    tools/                 # Zod schemas and tool business logic (transferStock, planTransferRoute, etc.)
+    SupplyChain.ts         # The Durable Object class, SQLite setup, and WebSocket logic
+  algorithms/
+    calculateOptimalRoute.ts # The Dijkstra pathfinding algorithm
+  config/
+    topology.ts            # The adjacency matrix (shipping times) for our global hubs
+  types/
+    graph.ts               # TypeScript interfaces
+  app.tsx                  # React frontend: Chat UI, approval blocks, and WebSocket listeners
+  server.ts                # Cloudflare Worker entry point
 ```
 
-## What's included
-
-- **AI Chat** — Streaming responses powered by Workers AI via `AIChatAgent`
-- **Three tool patterns** — server-side auto-execute, client-side (browser), and human-in-the-loop approval
-- **Scheduling** — one-time, delayed, and recurring (cron) tasks
-- **Reasoning display** — shows model thinking as it streams, collapses when done
-- **Debug mode** — toggle in the header to inspect raw message JSON for each message
-- **Kumo UI** — Cloudflare's design system with dark/light mode
-- **Real-time** — WebSocket connection with automatic reconnection and message persistence
-
-## Making it your own
-
-### Name your project
-
-Update the name in `package.json` and `wrangler.jsonc` — the `name` in `wrangler.jsonc` becomes your deployed Worker's URL (`<name>.<subdomain>.workers.dev`).
-
-### Change the system prompt
-
-Edit the `system` string in `server.ts` to give your agent a different personality or focus area. This is the most impactful single change you can make.
-
-### Replace the demo tools with real ones
-
-The starter ships with demo tools (`getWeather` returns random data, `calculate` does basic arithmetic). Replace them with real implementations:
-
-```ts
-// In server.ts, replace a demo tool with a real API call:
-getWeather: tool({
-  description: "Get the current weather for a city",
-  inputSchema: z.object({ city: z.string() }),
-  execute: async ({ city }) => {
-    const res = await fetch(`https://api.weather.example/${city}`);
-    return res.json();
-  }
-}),
-```
-
-### Add your own tools
-
-Add new tools to the `tools` object in `server.ts`. There are three patterns:
-
-```ts
-// Auto-execute: runs on the server, no user interaction
-myTool: tool({
-  description: "...",
-  inputSchema: z.object({ /* ... */ }),
-  execute: async (input) => { /* return result */ }
-}),
-
-// Client-side: no execute function, browser provides the result
-// Handle it in app.tsx via the onToolCall callback
-browserTool: tool({
-  description: "...",
-  inputSchema: z.object({ /* ... */ })
-}),
-
-// Approval: add needsApproval to gate execution
-sensitiveTool: tool({
-  description: "...",
-  inputSchema: z.object({ /* ... */ }),
-  needsApproval: async (input) => true, // or conditional logic
-  execute: async (input) => { /* runs after approval */ }
-}),
-```
-
-### Customize scheduled task behavior
-
-When a scheduled task fires, `executeTask` runs on the server. It does its work and then uses `this.broadcast()` to notify connected clients (shown as a toast notification in the UI). Replace it with your own logic:
-
-```ts
-async executeTask(description: string, task: Schedule<string>) {
-  // Do the actual work
-  await sendEmail({ to: "user@example.com", subject: description });
-
-  // Notify connected clients
-  this.broadcast(
-    JSON.stringify({ type: "scheduled-task", description, timestamp: new Date().toISOString() })
-  );
-}
-```
-
-> **Why `broadcast()` instead of `saveMessages()`?** Injecting into chat history can cause the AI to see the notification as new context and re-trigger the same task in a loop. `broadcast()` sends a one-off event that the client displays separately from the conversation.
-
-### Remove scheduling
-
-If you don't need scheduling, remove `scheduleTask`, `getScheduledTasks`, and `cancelScheduledTask` from the tools object, the `executeTask` method, and the schedule-related imports (`getSchedulePrompt`, `scheduleSchema`, `Schedule`, `generateId`).
-
-### Add state beyond chat messages
-
-Use `this.setState()` and `this.state` for real-time state that syncs to all connected clients. See [Store and sync state](https://developers.cloudflare.com/agents/api-reference/store-and-sync-state/).
-
-### Add callable methods
-
-Expose agent methods as typed RPC that your client can call directly:
-
-```ts
-import { callable } from "agents";
-
-export class ChatAgent extends AIChatAgent<Env> {
-  @callable()
-  async getStats() {
-    return { messageCount: this.messages.length };
-  }
-}
-
-// Client-side:
-const stats = await agent.call("getStats");
-```
-
-See [Callable methods](https://developers.cloudflare.com/agents/api-reference/callable-methods/).
-
-### Connect to MCP servers
-
-Add external tools from MCP servers:
-
-```ts
-async onChatMessage(onFinish, options) {
-  // Connect to an MCP server
-  await this.mcp.connect("https://my-mcp-server.example/sse");
-
-  const result = streamText({
-    // ...
-    tools: {
-      ...myTools,
-      ...this.mcp.getAITools() // Include MCP tools
-    }
-  });
-}
-```
-
-See [MCP Client API](https://developers.cloudflare.com/agents/api-reference/mcp-client-api/).
-
-## Use a different AI model provider
-
-The starter uses [Workers AI](https://developers.cloudflare.com/workers-ai/) by default (no API key needed). To use a different provider:
-
-### OpenAI
-
-```bash
-npm install @ai-sdk/openai
-```
-
-```ts
-// In server.ts, replace the model:
-import { openai } from "@ai-sdk/openai";
-
-// Inside onChatMessage:
-const result = streamText({
-  model: openai("gpt-5.2")
-  // ...
-});
-```
-
-Create a `.env` file with your API key:
-
-```
-OPENAI_API_KEY=your-key-here
-```
-
-### Anthropic
-
-```bash
-npm install @ai-sdk/anthropic
-```
-
-```ts
-import { anthropic } from "@ai-sdk/anthropic";
-
-const result = streamText({
-  model: anthropic("claude-sonnet-4-20250514")
-  // ...
-});
-```
-
-Create a `.env` file with your API key:
-
-```
-ANTHROPIC_API_KEY=your-key-here
-```
-
-## Deploy
-
-```bash
-npm run deploy
-```
-
-Your agent is live on Cloudflare's global network. Messages persist in SQLite, streams resume on disconnect, and the agent hibernates when idle.
-
-## Learn more
-
-- [Agents SDK documentation](https://developers.cloudflare.com/agents/)
-- [Build a chat agent tutorial](https://developers.cloudflare.com/agents/getting-started/build-a-chat-agent/)
-- [Chat agents API reference](https://developers.cloudflare.com/agents/api-reference/chat-agents/)
-- [Workers AI models](https://developers.cloudflare.com/workers-ai/models/)
-
-## License
-
-MIT
+_(Note: The AI prompts utilized during the creation of this project are documented in `PROMPTS.md` as requested in the assignment instructions)._
