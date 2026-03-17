@@ -202,7 +202,7 @@ function Chat() {
     const toasts = useKumoToastManager();
 
     const agent = useAgent({
-        agent: "ChatAgent",
+        agent: "SupplyChain",
         onOpen: useCallback(() => setConnected(true), []),
         onClose: useCallback(() => setConnected(false), []),
         onError: useCallback(
