@@ -342,10 +342,9 @@ function Chat() {
                             contents={
                                 <div className="flex flex-wrap justify-center gap-2">
                                     {[
-                                        "What's the weather in Paris?",
-                                        "What timezone am I in?",
-                                        "Calculate 5000 * 3",
-                                        "Remind me in 5 minutes to take a break",
+                                        "What is the status and the stock level of the Singapore warehouse?",
+                                        "There is a strike in Paris, update the warehouse status accordingly",
+                                        "Send 11 units from San Francisco to Lisbon",
                                     ].map((prompt) => (
                                         <Button
                                             key={prompt}
