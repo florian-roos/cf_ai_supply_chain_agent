@@ -10,6 +10,9 @@ import type {
     WarehouseStatus,
 } from "../types/graph";
 import { WORLD_MAP } from "../config/topology";
+import { getWarehouseStateTool } from "./tools/getWarehouseState";
+import { transferStockTool } from "./tools/transferStock";
+import { updateWarehouseStatusTool } from "./tools/updateWarehouseStatus";
 
 export class SupplyChain extends AIChatAgent<Env> {
     constructor(ctx: DurableObjectState, env: Env) {
@@ -49,6 +52,11 @@ ${getSchedulePrompt({ date: new Date() })}
 If the user asks to schedule a task, use the schedule tool to schedule the task.`,
             messages: await convertToModelMessages(this.messages),
             tools: {
+                // Server-side supply chain tools
+                getWarehouseState: getWarehouseStateTool(this),
+                transferStock: transferStockTool(this),
+                updateWarehouseStatus: updateWarehouseStatusTool(this),
+
                 // Client-side tool: no execute function — the browser handles it
                 getUserTimezone: tool({
                     description:
@@ -118,13 +126,8 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
     }
 
     async executeTask(description: string, _task: Schedule<string>) {
-        // Do the actual work here (send email, call API, etc.)
         console.log(`Executing scheduled task: ${description}`);
 
-        // Notify connected clients via a broadcast event.
-        // We use broadcast() instead of saveMessages() to avoid injecting
-        // into chat history — that would cause the AI to see the notification
-        // as new context and potentially loop.
         this.broadcast(
             JSON.stringify({
                 type: "scheduled-task",
