@@ -27,9 +27,14 @@
     },
     "migrations": [
         {
-            "new_sqlite_classes": ["SupplyChain"],
-            "tag": "v1",
+            "new_sqlite_classes": ["ChatAgent"],
+            "tag": "v1"
         },
+        {
+            "deleted_classes": ["ChatAgent"],
+            "new_sqlite_classes": ["SupplyChain"],
+            "tag": "v2"
+        }
     ],
     "observability": {
         "enabled": true,
