@@ -4,7 +4,7 @@
 
 ## Overview
 
-This project is a real-time, AI-orchestrated supply chain simulator built entirely on Cloudflare's edge infrastructure using the Agents SDK. This agent actively interacts with a simulated global network of warehouses. You can ask it about the current state of the supply chain, simulate natural disasters to knock warehouses disrupted, and route stock around the world.
+This project is a real-time, AI-orchestrated supply chain simulator built on Cloudflare's edge infrastructure using the Agents SDK. This agent interacts with a simulated global network of warehouses. You can ask it about the current state of a warehouse, simulate natural disasters to knock warehouses disrupted, and route stock around the world.
 
 The project uses LLMs for intent parsing, deterministic algorithms for pathfinding, and Durable Objects for state management.
 
@@ -39,7 +39,6 @@ Once you approve a stock transfer, the Durable Object acts on it in two steps to
 
 - Node.js (v18+)
 - npm
-- Wrangler CLI (logged into your Cloudflare account)
 
 ### Running Locally
 
@@ -75,4 +74,4 @@ src/
   server.ts                # Cloudflare Worker entry point
 ```
 
-_(Note: The AI prompts utilized during the creation of this project are documented in `PROMPTS.md` as requested in the assignment instructions)._
+_Note: The AI prompts utilized during the creation of this project are documented in `PROMPTS.md`._
